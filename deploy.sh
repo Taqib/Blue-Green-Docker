@@ -1,16 +1,22 @@
 #!/bin/bash
 
 # Variables
-DOCKER_IMAGE="your-dockerhub-username/your-app-image"
+DOCKER_IMAGE="taqib4802/blue-green"
 NGINX_CONF="/path/to/nginx.conf"  # Update this path to your nginx.conf location
 
 # Step 1: Pull the latest green image from Docker Hub
 echo "Pulling the latest green image from Docker Hub..."
-docker pull $DOCKER_IMAGE:green
+if ! docker pull $DOCKER_IMAGE:green; then
+  echo "Error: Failed to pull the green image. Aborting deployment."
+  exit 1
+fi
 
 # Step 2: Deploy the new version (green)
 echo "Deploying the new version (green)..."
-docker-compose up -d app-green
+if ! docker-compose up -d app-green; then
+  echo "Error: Failed to deploy the green container. Aborting deployment."
+  exit 1
+fi
 
 # Step 3: Wait for the green container to be healthy
 echo "Waiting for the green container to be healthy..."
@@ -22,6 +28,8 @@ GREEN_STATUS=$(curl -o /dev/null -s -w "%{http_code}\n" http://localhost:8002)
 
 if [ "$GREEN_STATUS" != "200" ]; then
   echo "Error: Green container is not healthy. Deployment aborted."
+  docker-compose stop app-green
+  docker-compose rm -f app-green
   exit 1
 fi
 
