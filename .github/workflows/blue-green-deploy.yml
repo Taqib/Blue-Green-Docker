@@ -23,26 +23,29 @@ jobs:
       - name: Set up Docker
         uses: docker/setup-buildx-action@v2
 
-      # Step 3: Determine which directory has changed
+      # Step 3: Detect changes in Blue or Green directory
       - name: Detect changes
         id: changes
         run: |
-          if git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep -q '^Blue/'; then
+          if git diff --name-only "${{ github.event.before }}" "${{ github.sha }}" | grep -q '^Blue/'; then
             echo "BUILD_CONTEXT=Blue" >> $GITHUB_ENV
             echo "TAG_NAME=blue" >> $GITHUB_ENV
-          elif git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep -q '^Green/'; then
+          elif git diff --name-only "${{ github.event.before }}" "${{ github.sha }}" | grep -q '^Green/'; then
             echo "BUILD_CONTEXT=Green" >> $GITHUB_ENV
             echo "TAG_NAME=green" >> $GITHUB_ENV
           else
             echo "No relevant changes detected."
-            exit 1
+            exit 0
+        shell: bash
 
       # Step 4: Log in to Docker Hub
       - name: Log in to Docker Hub
+        if: env.BUILD_CONTEXT # Only run if BUILD_CONTEXT is set
         run: echo "${{ secrets.DOCKERHUB_PASSWORD }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
 
       # Step 5: Build and push the Docker image
       - name: Build and push Docker image
+        if: env.BUILD_CONTEXT # Only run if BUILD_CONTEXT is set
         run: |
           IMAGE_NAME=${{ secrets.DOCKERHUB_USERNAME }}/blue-green:${{ env.TAG_NAME }}
           docker build -t $IMAGE_NAME ${{ env.BUILD_CONTEXT }}
