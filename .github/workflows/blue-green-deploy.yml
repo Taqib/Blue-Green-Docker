@@ -1,0 +1,49 @@
+name: Build and Push Docker Image
+
+on:
+  push:
+    paths:
+      - 'Blue/**'
+      - 'Green/**'
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    env:
+      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+      DOCKERHUB_PASSWORD: ${{ secrets.DOCKERHUB_PASSWORD }}
+
+    steps:
+      # Step 1: Checkout the repository
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # Step 2: Set up Docker
+      - name: Set up Docker
+        uses: docker/setup-buildx-action@v2
+
+      # Step 3: Determine which directory has changed
+      - name: Detect changes
+        id: changes
+        run: |
+          if git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep -q '^Blue/'; then
+            echo "BUILD_CONTEXT=Blue" >> $GITHUB_ENV
+            echo "TAG_NAME=blue" >> $GITHUB_ENV
+          elif git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep -q '^Green/'; then
+            echo "BUILD_CONTEXT=Green" >> $GITHUB_ENV
+            echo "TAG_NAME=green" >> $GITHUB_ENV
+          else
+            echo "No relevant changes detected."
+            exit 1
+
+      # Step 4: Log in to Docker Hub
+      - name: Log in to Docker Hub
+        run: echo "${{ secrets.DOCKERHUB_PASSWORD }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
+
+      # Step 5: Build and push the Docker image
+      - name: Build and push Docker image
+        run: |
+          IMAGE_NAME=${{ secrets.DOCKERHUB_USERNAME }}/blue-green:${{ env.TAG_NAME }}
+          docker build -t $IMAGE_NAME ${{ env.BUILD_CONTEXT }}
+          docker push $IMAGE_NAME
