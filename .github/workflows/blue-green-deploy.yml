@@ -36,6 +36,7 @@ jobs:
           else
             echo "No relevant changes detected."
             exit 0
+          fi
         shell: bash
 
       # Step 4: Log in to Docker Hub
