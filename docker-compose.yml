@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  app-blue:
+    build:
+      context: ./Blue
+    container_name: app-blue 
+    networks:
+    - app_network     
+    ports:
+      - "8001:8000" # Blue environment
+    volumes:
+      - ./Blue:/app  # Mount the Blue directory specifically
+    environment:
+      - FLASK_ENV=development
+    command: python /app/app.py  # Explicitly set the path to app.py
+
+  app-green:
+    build:
+      context: ./Green
+    container_name: app-green 
+    networks:
+    - app_network 
+    ports:
+      - "8002:8000" # Green environment
+    volumes:
+      - ./Green:/app  # Mount the Green directory specifically
+    environment:
+      - FLASK_ENV=development
+    command: python /app/app.py  # Explicitly set the path to app.py 
+
+  nginx:
+    image: nginx:latest
+    container_name: nginx
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+    networks:
+      - app_network
+    depends_on:
+      - app-blue
+      - app-green  
+
+networks:
+  app_network:
+    driver: bridge
+    name: app_network
