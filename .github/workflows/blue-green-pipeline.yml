@@ -64,7 +64,7 @@ jobs:
           docker push $IMAGE_NAME
 
       # Step 6: SSH into EC2 and check nginx and whole application stack is running or not
-      - name: Deploy to EC2
+      - name: Deploy Nignx & whole stack to EC2
         if: env.BUILD_CONTEXT
         uses: appleboy/ssh-action@v0.1.10
         with:
@@ -76,8 +76,8 @@ jobs:
             /home/ubuntu/Blue-Green/deploy.sh
 
           
-      # Step 7: SSH into EC2 and run deploy.sh
-      - name: Deploy to EC2
+      # Step 7: SSH into EC2 and run green.sh
+      - name: Deploy green app to EC2
         if: env.BUILD_CONTEXT
         uses: appleboy/ssh-action@v0.1.10
         with:
