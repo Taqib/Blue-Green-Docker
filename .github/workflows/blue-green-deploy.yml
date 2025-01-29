@@ -62,3 +62,15 @@ jobs:
           IMAGE_NAME=${{ secrets.DOCKERHUB_USERNAME }}/blue-green:${{ env.TAG_NAME }}
           docker build -t $IMAGE_NAME ${{ env.BUILD_CONTEXT }}
           docker push $IMAGE_NAME
+          
+      # Step 6: SSH into EC2 and run deploy.sh
+      - name: Deploy to EC2
+        if: env.BUILD_CONTEXT
+        uses: appleboy/ssh-action@v0.1.10
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
+          script: |
+            chmod +x /home/ubuntu/Blue-Green/deploy.sh
+            /home/ubuntu/Blue-Green/deploy.sh
